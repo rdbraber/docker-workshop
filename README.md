@@ -475,6 +475,8 @@ b536b88f327478168e5dc155f0014859296a3caa448cdd260bbb636af3bfd054
 map[443/tcp:[{0.0.0.0 32768}] 80/tcp:[{0.0.0.0 32769}]]
 ~~~
 
+More about the `docker inspect` command can be found in the [Engine CLI reference guide](https://docs.docker.com/engine/reference/commandline/inspect/#find-a-specific-port-mapping). 
+
 ## Show logging of a process which is running inside a container
 
 An application might generate logging, but since there's only one process running inside the container most of the time logfiles are written to stout and sterr. This is also the case for out nginx image. See the link that was created during the creation of the image:
@@ -492,3 +494,94 @@ We can take a look at the logfiles with the `docker logs` command:
 172.17.0.1 - - [12/Apr/2017:17:57:06 +0000] "GET / HTTP/1.1" 200 612 "-" "curl/7.29.0" "-"
 ~~~
 
+## Running a single command in a running container
+
+Sometimes you want to take a look inside a running container. Maybe you want to see some settings of the application that's running in the container. This can be done with the `docker exec` command.
+We are going to connect to our running ngnix. We want an interactive session and a pseudo-TTY so we will use the `-i` and `-t` options. We need to specify a command which we want to run in the container. In this case we are going to start bash:
+
+~~~
+[root@docker1 ~]# docker exec -i -t b536b88f3274 /bin/bash
+root@b536b88f3274:/#
+~~~
+
+Now we are able to take a look inside the container. We could use normal linux commands like for example `df`, `ls` and `cat`.
+
+~~~
+root@b536b88f3274:/# df -h
+Filesystem           Size  Used Avail Use% Mounted on
+overlay               50G  1.9G   49G   4% /
+tmpfs                1.9G     0  1.9G   0% /dev
+tmpfs                1.9G     0  1.9G   0% /sys/fs/cgroup
+/dev/mapper/cl-root   50G  1.9G   49G   4% /etc/hosts
+shm                   64M     0   64M   0% /dev/shm
+tmpfs                1.9G     0  1.9G   0% /sys/firmware
+
+root@b536b88f3274:/# cat /etc/hosts
+127.0.0.1	localhost
+::1	localhost ip6-localhost ip6-loopback
+fe00::0	ip6-localnet
+ff00::0	ip6-mcastprefix
+ff02::1	ip6-allnodes
+ff02::2	ip6-allrouters
+172.17.0.2	b536b88f3274
+
+root@b536b88f3274:/# ip route
+default via 172.17.0.1 dev eth0
+172.17.0.0/16 dev eth0  proto kernel  scope link  src 172.17.0.2
+
+root@b536b88f3274:/# ps -ef
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 17:54 ?        00:00:00 nginx: master process nginx -g daemon off;
+nginx        5     1  0 17:54 ?        00:00:00 nginx: worker process
+root         6     0  0 18:51 ?        00:00:00 /bin/bash
+root        18     6  0 18:58 ?        00:00:00 ps -ef
+~~~
+ 
+To exit from the container, just type the command `exit`.
+
+Instead of running bash, you could also run the command directly:
+
+~~~
+[root@docker1 ~]# docker exec -i -t b536b88f3274 ps -ef
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 17:54 ?        00:00:00 nginx: master process nginx -g d
+nginx        5     1  0 17:54 ?        00:00:00 nginx: worker process
+root        29     0  0 19:02 ?        00:00:00 ps -ef
+~~~
+
+## Using volumes with Docker
+
+Nginx showed us the default homepage, but what if we want to show our own content? It is possible to create the content on our server and let the nginx webserver in the container serve this content. This is done with volumes. By using the `-v` option, you are able to mount a directory on your server as a volume inside the container. 
+
+First we create some content for our webserver. Create the file `/tmp/index.html` with the following content:
+
+~~~
+<html>
+<head>
+<title>This is our own content</title>
+</head>
+<body>
+<h1>Cool, this is our own content!</h1>
+<p> This webserver now shows our own content</p>
+</body>
+</html>
+~~~
+
+Stop all running nginx containers and start a new one:
+
+~~~
+docker run -d -p 8080:80 -v /tmp:/usr/share/nginx/html nginx
+~~~
+
+The `/tmp` directory on our server is mounted in the countainer to the mountpoint `/usr/share/nginx/html`.
+
+Let's see if our content really is served:
+
+~~~
+[root@docker1 ~]# curl -s localhost:8080 |html2text
+# Cool, this is our own content!
+
+This webserver now shows our own content
+~~~
+
+Change a part in the file `/tmp/index.html` and check again with the curl command. Changes should be seen immediately.
