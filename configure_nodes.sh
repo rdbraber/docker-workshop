@@ -1,22 +1,7 @@
 #!/bin/bash
 
-# Add entries from the Vagrant file to the /etc/hosts file
 
-IFS=$'\n'
-cat /vagrant/Vagrantfile |egrep "hostname|network" |awk 'NR%2{printf $0;next;}1' | tr -d "\"" | awk '{printf $7" "$3"\n"}' > /tmp/hosts
-for LINE in `cat /tmp/hosts`
-do
-  IP=`echo $LINE |awk '{printf $1}'`
-  FQDN=`echo $LINE |awk '{printf $2}'`
-  SHORT=`echo $LINE |awk '{printf $2}'|cut -d "." -f 1`
-  echo "${IP} ${SHORT} ${FQDN}" >> /etc/hosts
-done
-rm -f /tmp/hosts 
-
-
-
-
-# install Docker engine
+# Install Docker and some other packages
 
 cat >/etc/yum.repos.d/docker.repo <<-EOF
 [dockerrepo]
@@ -33,3 +18,16 @@ yum -y install docker-engine
 
 systemctl enable docker.service
 systemctl start docker.service
+
+
+yum -y install html2text
+
+# Already install some Docker images
+
+sudo docker pull centos
+sudo docker pull nginx
+sudo docker pull ubuntu
+
+add an entry to the file ~/.bashrc
+
+echo "sudo -i; exit" >> /home/vagrant/.bashrc
