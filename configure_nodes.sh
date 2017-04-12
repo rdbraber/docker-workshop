@@ -28,6 +28,6 @@ sudo docker pull centos
 sudo docker pull nginx
 sudo docker pull ubuntu
 
-add an entry to the file ~/.bashrc
+# Add an entry to the file ~/.bashrc
 
 echo "sudo -i; exit" >> /home/vagrant/.bashrc
