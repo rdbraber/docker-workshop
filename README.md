@@ -644,3 +644,41 @@ docker build -t own_apache .
 Don't forget the point at the end of the command. This means that the `docker run` command will look for the `Dockerfile` in the current directory. With the `-t` option you can specify the name for your image.
 
 Run the command and after it's finished, run the `docker history` command to show the different layers of your image.
+
+We should now be able to start a new container from our own image, just like we did with the nginx image:
+
+~~~
+docker run -d -p 9080:80 own_apache
+~~~
+
+And we can test the webserver again with the curl command:
+
+~~~
+curl -s localhost:9080 | html2text
+~~~
+
+If everything went well, you should see the default Apache home page for Centos.
+
+## Building a Docker image that could check our Ansible code
+
+Since we do all of our config management with Ansible it would be a good idea to use [ansible-lint](https://github.com/willthames/ansible-lint), which is a best practices checker for Ansible. The easiest step is to install Ansible, python-pip and then ansible-lint. Our Dockerfile would look something like this:
+
+~~~
+FROM centos
+
+MAINTAINER Rob den Braber (rdbraber@example.com)
+
+RUN yum -y install epel-release 
+RUN yum -y install ansible python-pip 
+RUN pip install ansible-lint 
+RUN yum clean all
+
+RUN mkdir /src
+
+WORKDIR /src
+
+CMD /usr/bin/ansible-lint
+~~~
+
+I will explain all commands used in this `Dockerfile`.  
+
