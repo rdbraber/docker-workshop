@@ -585,3 +585,62 @@ This webserver now shows our own content
 ~~~
 
 Change a part in the file `/tmp/index.html` and check again with the curl command. Changes should be seen immediately.
+
+## Creating your own image
+
+Creating an image is not as difficult as you might think. It is done with help of the `docker build` command and a file with the name `Dockerfile`. 
+
+The first thing you need is a base image from your favorit Linux distribution. In this example we are going to use the Centos image, which is already available on our server. So the first line of our `Dockerfile` would be the starting point where we start from:
+
+~~~
+FROM centos:latest
+~~~
+
+It is a common practice that the second line contains the maintainer of the image, so that would be:
+
+~~~
+MAINTAINER Rob den Braber (rdbraber@example.com)
+~~~
+
+Most of the time you would like to install a package, so we are going to RUN a command to install the Apache webserver:
+
+~~~
+RUN yum -y install httpd
+~~~
+
+A webserver is useless if no port is exposed, so we use the `EXPOSE` command, to expose port 80 once the container is started:
+
+~~~
+EXPOSE 80
+~~~
+
+Last step would be to start the Apache webserver. This works a bit different in a container, since no init system is installed, so we have to directly start the apache process and make sure it is started in the foreground in the container:
+
+~~~
+ENTRYPOINT /usr/sbin/httpd -DFOREGROUND
+~~~
+
+The `ENTRYPOINT` command can be used to start the 'application' inside your container.
+
+This is just a small `Dockerfile` which in the end looks like this:
+
+~~~
+FROM centos:latest
+MAINTAINER Rob den Braber (rdbraber@example.com)
+
+RUN yum -y install httpd
+
+EXPOSE 80
+
+ENTRYPOINT /usr/sbin/httpd -DFOREGROUND
+~~~
+
+Now we can build our new image with the `docker build` command:
+
+~~~
+docker build -t own_apache .
+~~~
+
+Don't forget the point at the end of the command. This means that the `docker run` command will look for the `Dockerfile` in the current directory. With the `-t` option you can specify the name for your image.
+
+Run the command and after it's finished, run the `docker history` command to show the different layers of your image.
