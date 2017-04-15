@@ -677,8 +677,77 @@ RUN mkdir /src
 
 WORKDIR /src
 
-CMD /usr/bin/ansible-lint
+ENTRYPOINT ["/usr/bin/ansible-lint"]
 ~~~
 
-I will explain all commands used in this `Dockerfile`.  
+I will explain all commands used in this `Dockerfile`. 
 
+FROM - We use the latest centos version as the base for our image.
+
+MAINTAINER - Just to let people know who maintaines this image.
+
+RUN - Install the Extra Package for Enterprise Linux (EPEL) and after that install the packages ansible and python-pip. With the help of pip, a tool for installing Python packages, we install ansible-lint. The last step is to clean all of the yum cache.
+
+RUN - Create the directory /src.
+
+WORKDIR - set the working directory for the CMD instruction that follow it in the Dockerfile.
+
+ENTRYPOINT - allows you to run a container that will run as an executable. In this case it will run the ansible-lint command.
+
+Create a new directory (ansible-lint) and change directory to this directory. Create the `Dockerfile` and run the `docker build` command to create the new image:
+
+~~~
+docker build -t ansible-lint .
+~~~
+
+Now we need to create a short Ansible playbook which we can check with ansible-lint. Create the file `test.yml` with the following content:
+
+~~~
+- hosts: web
+
+  tasks:
+
+  - name: List all packages
+    shell: rpm -qa
+    register: rpm_packages
+~~~
+
+Now we should be able to start the container an check our playbook:
+
+~~~
+docker run -i -t --rm -v $PWD:/src ansible-lint test.yml
+~~~
+
+We've added the option `--rm` to the docker command. This deletes the container after the task is finished. That way you don't end up with lots of stopped containers.
+
+Since this is already a long command, maybe you can create an alias for it:
+
+~~~
+alias al='docker run -i -t --rm -v $PWD:/src ansible-lint test.yml' 
+~~~
+
+Now you should be able to test you ansible playbook with a simple command:
+
+~~~
+al test.yml
+~~~
+
+The output of the command should look like the following:
+
+~~~
+[root@docker1 ansible-lint]# al test.yml
+[ANSIBLE0006] rpm used in place of yum or rpm_key module
+test.yml:5
+Task/Handler: List all packages
+
+[ANSIBLE0012] Commands should not change things if nothing needs doing
+test.yml:5
+Task/Handler: List all packages
+
+[ANSIBLE0013] Use shell only when shell functionality is required
+test.yml:5
+Task/Handler: List all packages
+
+~~~
+
+If you take a look which containers are running or were created (`docker ps -a`), you should not see the ansible-lint container.
