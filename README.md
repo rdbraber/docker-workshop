@@ -529,6 +529,8 @@ root@b536b88f3274:/# ip route
 default via 172.17.0.1 dev eth0
 172.17.0.0/16 dev eth0  proto kernel  scope link  src 172.17.0.2
 
+root@b536b88f3274:/# apt-get update && apt-get install procps
+
 root@b536b88f3274:/# ps -ef
 UID        PID  PPID  C STIME TTY          TIME CMD
 root         1     0  0 17:54 ?        00:00:00 nginx: master process nginx -g daemon off;

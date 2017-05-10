@@ -4,6 +4,7 @@ Currently also Oracle supports running their RDMBS in a Docker container, althou
 
 Scripts for creating different Docker images for Oracle software can be found on [Github](https://github.com/oracle/docker-images).
 
+By the way, the step to download the database zip file only works on an student environment I've created. If you want to follow the steps in this document, you can download the zipfile linuxx64_12201_database.zip from [Oracle](http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html). After you've downloaded the file, make sure you place it in the directory ~/docker-images/OracleDatabase/dockerfiles/12.2.0.1.
 
 The first step is to pull these scripts:
 
@@ -327,9 +328,9 @@ Completed: ALTER DATABASE OPEN
 If you would like the data to be persistent, you could use the volume (-v) parameter when you create the container. Create the oracle user on the host that runs Docker with the same uid and gid as the one in the container:
 
 ~~~
-# groupadd -g 501 oinstall
-# groupadd -g 500 dba
-# useradd -u 500 -g dba -G oinstall oracle
+# groupadd -g 54321 oinstall
+# groupadd -g 54322 dba
+# useradd -u 54321 -g oinstall -G dba oracle
 ~~~
 
 This should also have created the home directory for the oracle account:
@@ -342,7 +343,7 @@ drwx------. 5 oracle dba 119 May 10 09:44 /home/oracle
 Now start the container with the following extra parameter (-v):
 
 ~~~
-docker run -d --name OracleDB --shm-size=1g -p 1521:1521 -p 8080:8080 -e ORACLE_PWD=Oracle01 -v /home/oracle:/opt/oracle/oradata oracle/database:12.2.0.1-se2
+# docker run -d --name OracleDB --shm-size=1g -p 1521:1521 -p 8080:8080 -e ORACLE_PWD=Oracle01 -v /home/oracle:/opt/oracle/oradata oracle/database:12.2.0.1-se2
 ~~~
 
 The database is created again, but now the datafiles are created in the directory /home/oracle and are persistent:
