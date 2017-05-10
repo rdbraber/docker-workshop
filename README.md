@@ -696,7 +696,7 @@ ENTRYPOINT - allows you to run a container that will run as an executable. In th
 
 Create a new directory (ansible-lint) and change directory to this directory. Create the `Dockerfile` and run the `docker build` command to create the new image:
 
-~~~
+~~~ 
 docker build -t ansible-lint .
 ~~~
 

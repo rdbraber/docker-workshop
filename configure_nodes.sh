@@ -20,7 +20,7 @@ systemctl enable docker.service
 systemctl start docker.service
 
 
-yum -y install html2text
+yum -y install git html2text
 
 # Already install some Docker images
 
