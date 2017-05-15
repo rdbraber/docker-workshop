@@ -728,7 +728,7 @@ Since this is already a long command, maybe you can create an alias for it:
 
 ~~~
 alias al='docker run -i -t --rm -v $PWD:/src ansible-lint test.yml' 
-~~~ar
+~~~
 
 Now you should be able to test you ansible playbook with a simple command:
 
