@@ -32,6 +32,8 @@ systemctl status docker
 
 The command above will show you that the service is running and that we should be able to use it.
 
+
+
 To see the current version of Docker run the `docker --version` command:
 
 ~~~
@@ -726,7 +728,7 @@ Since this is already a long command, maybe you can create an alias for it:
 
 ~~~
 alias al='docker run -i -t --rm -v $PWD:/src ansible-lint test.yml' 
-~~~
+~~~ar
 
 Now you should be able to test you ansible playbook with a simple command:
 
@@ -753,3 +755,62 @@ Task/Handler: List all packages
 ~~~
 
 If you take a look which containers are running or were created (`docker ps -a`), you should not see the ansible-lint container.
+
+The size of our ansible-lint image is around 400MB. Would it be possible to create an image with a smaller size? Maybe we should use another base image instead of the CentOS one, which is already around 200 MB in size.
+
+Get the Alpine image and look at it's size:
+
+~~~
+docker pull alpine
+docker images alpine
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+alpine              latest              02674b9cb179        5 days ago          3.98MB
+~~~
+
+This already looks better. Now in a new directory (ansible-lint2) create a new Dockerfile:
+
+~~~
+FROM alpine
+
+MAINTAINER Rob den Braber (rdbraber@example.com)
+
+RUN apk update && apk add py2-pip ansible && pip install ansible-lint
+
+RUN mkdir /src
+
+WORKDIR /src
+
+ENTRYPOINT ["/usr/bin/ansible-lint"]
+~~~
+
+Build the image with the `docker build` command:
+
+~~~
+docker build -t ansible-lint2 .
+~~~
+
+Take a look at the size of this new image:
+
+~~~
+[root@docker1 ansible-lint2]# docker images |grep ansible-lint
+ansible-lint2       latest              0dec765a7377        9 minutes ago       87.2MB
+ansible-lint        latest              b091aa3b7acb        About an hour ago   384MB
+~~~
+
+As shown in the output above, the second image we created is 4,5 times smaller than the first one, and it works exactly the same:
+
+~~~
+[root@docker1 ansible-lint2]# docker run -i -t --rm -v ~/ansible-lint:/src ansible-lint2 test.yml
+[ANSIBLE0006] rpm used in place of yum or rpm_key module
+test.yml:5
+Task/Handler: List all packages
+
+[ANSIBLE0012] Commands should not change things if nothing needs doing
+test.yml:5
+Task/Handler: List all packages
+
+[ANSIBLE0013] Use shell only when shell functionality is required
+test.yml:5
+Task/Handler: List all packages
+~~~
+
